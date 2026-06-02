@@ -1,0 +1,58 @@
+name: Optionally fetch an app token
+description: Optionally fetch an app token
+
+inputs:
+  REQUIRED:
+    required: false
+    default: 'false'
+    description: If set to 'true' and fetching a token fails, the action will fail
+  CLIENT_ID:
+    required: true
+    description: The client id for the app
+  PRIVATE_KEY:
+    required: true
+    description: The private key for the app
+
+outputs:
+  token:
+    value: ${{ steps.fetch-app-token.outputs.token }}
+    description: The app token
+
+runs:
+  using: composite
+  steps:
+    -
+      id: check-inputs
+      shell: bash
+      env:
+        INPUT_REQUIRED: ${{ inputs.REQUIRED }}
+        INPUT_CLIENT_ID: ${{ inputs.CLIENT_ID }}
+        INPUT_PRIVATE_KEY: ${{ inputs.PRIVATE_KEY }}
+      run: |
+        # Validate inputs
+
+        CREDENTIALS_SET=true
+
+        if [[ -z "$INPUT_CLIENT_ID" ]]; then
+          echo "Input 'CLIENT_ID' not specified"
+          CREDENTIALS_SET=false
+        fi
+
+        if [[ -z "$INPUT_PRIVATE_KEY" ]]; then
+          echo "Input 'PRIVATE_KEY' not specified"
+          CREDENTIALS_SET=false
+        fi
+
+        if [[ "$REQUIRED" == "true" && "$CREDENTIALS_SET" == "false" ]]; then
+          exit 1
+        fi
+
+        echo "credentials-set=$CREDENTIALS_SET" | tee -a "$GITHUB_OUTPUT"
+    -
+      name: Fetch app token
+      id: fetch-app-token
+      if: steps.check-inputs.outputs.credentials-set == 'true'
+      uses: actions/create-github-app-token@v3
+      with:
+        client-id: ${{ inputs.CLIENT_ID }}
+        private-key: ${{ inputs.PRIVATE_KEY }}
