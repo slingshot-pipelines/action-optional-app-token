@@ -12,6 +12,20 @@ inputs:
   PRIVATE_KEY:
     required: true
     description: The private key for the app
+  OWNER:
+    required: false
+    description: |
+      The owner of the repository or repositories to create the token for.
+
+      If not specified, the current owner will be used.
+  REPOSITORIES:
+    required: false
+    description: |
+      A newline-separated list of repositories to scope the token for.
+      
+      If not specified, the current repository will be used.
+
+      Use '*' to specify all repositories under the owner
 
 outputs:
   token:
@@ -56,3 +70,5 @@ runs:
       with:
         client-id: ${{ inputs.CLIENT_ID }}
         private-key: ${{ inputs.PRIVATE_KEY }}
+        owner: ${{ inputs.OWNER || github.repository_owner }}
+        repositories: ${{ inputs.REPOSITORIES }}
